@@ -27,7 +27,10 @@ io.on('connection', (socket) => {
     serverLog('A page disconnected from the server:', socket.id);
   });
 
-  // Additional message handling can be added here
+  // Handle receiving chat messages
+  socket.on('chat message', (data) => {
+    io.emit('chat message', data); // Broadcast the chat message to all clients
+  });
 });
 
 const PORT = process.env.PORT || 3000;
