@@ -8,6 +8,11 @@ document.getElementById('username-display').innerText = `Welcome, ${username}`;
 // Set up Socket.io
 const socket = io();
 
+// Handle server log messages
+socket.on('log', (message) => {
+  console.log(message);
+});
+
 // Handle sending messages
 document.getElementById('send-button').addEventListener('click', () => {
   const message = document.getElementById('chat-input').value;
