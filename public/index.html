@@ -48,9 +48,9 @@
 <script>
   function goToLobby() {
     if (typeof $ !== 'undefined') {
-      const displayName = $('#display-name').val;
+      const displayName = $('#display-name').val();
       console.log('Display name: ', displayName);
-      window.location.href = `lobby.html?username={displayName}`;
+      window.location.href = `lobby.html?username=${displayName}`;
     } else {
       console.error('jQuery is not loaded.')
     }    
