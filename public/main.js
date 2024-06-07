@@ -1,6 +1,7 @@
 // Extract the username from the URL
 const params = new URLSearchParams(window.location.search);
-const username = params.get('username');
+const username = decodeURI(params.get('username'))
+
 
 // Display the username in the lobby
 document.getElementById('username-display').innerText = `Welcome, ${username}`;
