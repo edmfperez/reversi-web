@@ -13,12 +13,21 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Function to log messages from the server and broadcast them to clients
+function serverLog(...messages) {
+  io.emit('log', '**** Message from the server: \n' + messages.join(' '));
+  messages.forEach(message => console.log(message));
+}
+
+// Setup Socket.io connection handling
 io.on('connection', (socket) => {
-  console.log('A user connected', socket.id);
+  serverLog('A page connected to the server:', socket.id);
 
   socket.on('disconnect', () => {
-    console.log('User disconnected', socket.id);
+    serverLog('A page disconnected from the server:', socket.id);
   });
+
+  // Additional message handling can be added here
 });
 
 const PORT = process.env.PORT || 3000;
