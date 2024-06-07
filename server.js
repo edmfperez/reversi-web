@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -13,20 +14,18 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Function to log messages from the server and broadcast them to clients
 function serverLog(...messages) {
   io.emit('log', '**** Message from the server: \n' + messages.join(' '));
   messages.forEach(message => console.log(message));
 }
 
-// Setup Socket.io connection handling
 io.on('connection', (socket) => {
   serverLog('A page connected to the server:', socket.id);
 
   socket.on('join_room', (payload) => {
     serverLog('Server received join room command:', JSON.stringify(payload));
 
-    if (typeof payload === 'undefined' || payload === null) {
+    if (!payload) {
       const response = {
         result: 'fail',
         message: 'Client did not send a payload'
@@ -36,7 +35,7 @@ io.on('connection', (socket) => {
     }
 
     const { room, username } = payload;
-    if (typeof room === 'undefined' || room === null) {
+    if (!room) {
       const response = {
         result: 'fail',
         message: 'Client did not send a valid room to join'
@@ -45,7 +44,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (typeof username === 'undefined' || username === null) {
+    if (!username) {
       const response = {
         result: 'fail',
         message: 'Client did not send a valid username'
@@ -82,7 +81,20 @@ io.on('connection', (socket) => {
 
   // Handle chat messages
   socket.on('chat message', (data) => {
-    io.emit('chat message', data);
+    serverLog('Server received chat message:', JSON.stringify(data));
+
+    if (!data || !data.room || !data.username || !data.message) {
+      return;
+    }
+
+    const response = {
+      result: 'success',
+      room: data.room,
+      username: data.username,
+      message: data.message
+    };
+    io.in(data.room).emit('chat message', response);
+    serverLog('Chat message broadcast:', JSON.stringify(response));
   });
 });
 
