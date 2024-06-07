@@ -3,7 +3,7 @@ const params = new URLSearchParams(window.location.search);
 const username = params.get('username');
 
 // Display the username in the lobby
-document.getElementById('username-display').innerText = `Welcome, ${username}`;
+document.getElementById('username-display').innerText = `Welcome, {username}`;
 
 // Set up Socket.io
 const socket = io();
