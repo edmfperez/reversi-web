@@ -104,3 +104,10 @@ io.on('connection', (socket) => {
     };
     io.in(data.room).emit('chat message', response);
     serverLog('Chat message broadcast:', JSON.stringify(response
+
+));
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
