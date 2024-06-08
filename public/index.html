@@ -10,8 +10,6 @@
       background-color: darkseagreen;
     }
   </style>
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
   <div class="container-fluid">
@@ -38,18 +36,26 @@
       </div>
     </div>
     <div class="row mt-3">
-      <!-- <div class="col text-center">
+      <div class="col text-center">
         <img src="assets/images/bottom_splash.png" class="img-fluid" alt="Reversi logo">
-      </div> -->
+      </div>
     </div>
   </div>
-  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script>
+    function goToLobby() {
+      const displayName = $('#display-name').val();
+      window.location.href = `lobby.html?username=${displayName}`;
+    }
 
-<script>
-  function goToLobby() {
-    const displayName = encodeURI($('#display-name').val());
-    window.location.href = `lobby.html?username=${displayName}`;   
-  }
-</script>
+    $(document).ready(function() {
+      $('#display-name').keypress(function(event) {
+        if (event.keyCode == 13) {
+          event.preventDefault();
+          $('#lobby-button').click();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
