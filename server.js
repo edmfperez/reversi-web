@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -13,6 +12,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+let players = {};
 
 function serverLog(...messages) {
   io.emit('log', '**** Message from the server: \n' + messages.join(' '));
@@ -54,6 +55,8 @@ io.on('connection', (socket) => {
     }
 
     socket.join(room);
+    players[socket.id] = { id: socket.id, username, room };
+
     const sockets = Array.from(io.sockets.adapter.rooms.get(room) || []);
     serverLog(`There are ${sockets.length} clients in the room ${room}`);
     if (!sockets.includes(socket.id)) {
@@ -69,17 +72,23 @@ io.on('connection', (socket) => {
       result: 'success',
       room: room,
       username: username,
-      count: sockets.length
+      count: sockets.length,
+      players: Object.values(players).filter(player => player.room === room)
     };
     io.in(room).emit('join_room_response', response);
     serverLog('Join room succeeded:', JSON.stringify(response));
   });
 
-  socket.on('disconnect', () => {
-    serverLog('A page disconnected from the server:', socket.id);
+  socket.on('invite_player', (payload) => {
+    serverLog('Server received invite player command:', JSON.stringify(payload));
+    // Handle invite player logic here
   });
 
-  // Handle chat messages
+  socket.on('disconnect', () => {
+    serverLog('A page disconnected from the server:', socket.id);
+    delete players[socket.id];
+  });
+
   socket.on('chat message', (data) => {
     serverLog('Server received chat message:', JSON.stringify(data));
 
@@ -94,9 +103,4 @@ io.on('connection', (socket) => {
       message: data.message
     };
     io.in(data.room).emit('chat message', response);
-    serverLog('Chat message broadcast:', JSON.stringify(response));
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+    serverLog('Chat message broadcast:', JSON.stringify(response
