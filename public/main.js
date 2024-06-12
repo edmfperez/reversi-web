@@ -1,4 +1,3 @@
-// Extract the username from the URL
 const params = new URLSearchParams(window.location.search);
 let username = decodeURI(params.get('username'));
 let chatRoom = params.get('game_id') || 'lobby';
@@ -7,7 +6,6 @@ if (!username || username === 'null') {
   username = 'Guest';
 }
 
-// Display the username in the lobby
 document.getElementById('username-display').innerText = `Welcome, ${username}`;
 
 $(document).ready(() => {
@@ -37,7 +35,7 @@ function sendChatMessage() {
   };
   console.log('Client log message: Sending chat message', JSON.stringify(request));
   socket.emit('chat message', request);
-  $('#chat-input').val(''); // Clear the input field
+  $('#chat-input').val('');
 }
 
 function invitePlayer(playerId) {
@@ -50,12 +48,10 @@ function invitePlayer(playerId) {
   socket.emit('invite_player', request);
 }
 
-// Handle server log messages
 socket.on('log', (message) => {
   console.log(message);
 });
 
-// Handle join room responses
 socket.on('join_room_response', (payload) => {
   if (!payload) {
     console.log('Server did not send a payload');
@@ -67,22 +63,51 @@ socket.on('join_room_response', (payload) => {
     return;
   }
 
-  const newString = `<p class="join-room-response">${payload.username} joined the ${payload.room}. There are ${payload.count} users in this room.</p>`;
-  const newNode = $(newString).hide();
-  $('#messages').prepend(newNode);
+  if (payload.socket_id === socket.id) {
+    return;
+  }
+
+  const domElements = $(`.socket_${payload.socket_id}`);
+  if (domElements.length !== 0) {
+    return;
+  }
+
+  const newPlayerDiv = `
+    <div class="row align-items-center socket_${payload.socket_id}" style="display:none;">
+      <div class="col text-end"><h4>${payload.username}</h4></div>
+      <div class="col text-start"><button class="btn btn-outline-primary" onclick="invitePlayer('${payload.socket_id}')">Invite</button></div>
+    </div>
+  `;
+  $('#players').append($(newPlayerDiv).fadeIn(500));
+
+  const newMessage = `<p class="join-room-response">${payload.username} joined the ${payload.room}. There are ${payload.count} users in this room.</p>`;
+  const newNode = $(newMessage).hide();
+  $('#chat-messages').prepend(newNode);
   newNode.fadeIn(500);
 
-  // Update players list
   $('#players').empty();
   payload.players.forEach(player => {
-    const playerDiv = `<div class="player" id="${player.id}">${player.username} <button class="invite-btn" onclick="invitePlayer('${player.id}')">Invite</button></div>`;
+    const playerDiv = `<div class="player socket_${player.id}">
+      ${player.username} <button class="invite-btn" onclick="invitePlayer('${player.id}')">Invite</button>
+    </div>`;
     $('#players').append(playerDiv);
   });
 });
 
-// Handle receiving messages
 socket.on('chat message', (data) => {
   const messageElement = $(`<div>${data.username}: ${data.message}</div>`).hide();
   $('#chat-messages').append(messageElement);
   messageElement.fadeIn(500);
+});
+
+socket.on('player_disconnected', (payload) => {
+  const newString = `<p class="left-room-response">${payload.username} left the ${payload.room}. There are ${payload.count} users in this room.</p>`;
+  const newNode = $(newString).hide();
+  $('#chat-messages').prepend(newNode);
+  newNode.fadeIn(500);
+
+  const domElements = $(`.socket_${payload.socket_id}`);
+  if (domElements.length !== 0) {
+    domElements.fadeOut(500, () => domElements.remove());
+  }
 });
