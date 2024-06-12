@@ -86,7 +86,20 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     serverLog('A page disconnected from the server:', socket.id);
-    delete players[socket.id];
+    if (players[socket.id]) {
+      const { username, room } = players[socket.id];
+      delete players[socket.id];
+
+      const payload = {
+        username,
+        room,
+        count: Object.keys(players).filter(id => players[id].room === room).length,
+        socket_id: socket.id
+      };
+
+      io.in(room).emit('player_disconnected', payload);
+      serverLog('Player disconnected:', JSON.stringify(payload));
+    }
   });
 
   socket.on('chat message', (data) => {
