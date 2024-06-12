@@ -103,9 +103,7 @@ io.on('connection', (socket) => {
       message: data.message
     };
     io.in(data.room).emit('chat message', response);
-    serverLog('Chat message broadcast:', JSON.stringify(response
-
-));
+    serverLog('Chat message broadcast:', JSON.stringify(response));
   });
 });
 
