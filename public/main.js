@@ -9,6 +9,9 @@ if (!username || username === 'null' || username === '') {
 
 document.getElementById('username-display').innerText = `Welcome, ${username}`;
 
+// Initialize Socket.IO client
+const socket = io();
+
 $(document).ready(() => {
   $('#lobby-title').text(`${username}'s Lobby`);
 
