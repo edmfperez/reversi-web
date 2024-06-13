@@ -51,6 +51,16 @@ function invitePlayer(playerId) {
   socket.emit('invite_player', request);
 }
 
+function uninvitePlayer(playerId) {
+  const request = {
+    room: chatRoom,
+    from: username,
+    to: playerId
+  };
+  console.log('Client log message: Sending uninvite player command', JSON.stringify(request));
+  socket.emit('uninvite_player', request);
+}
+
 socket.on('log', (message) => {
   console.log(message);
 });
@@ -139,8 +149,31 @@ socket.on('invited', (payload) => {
   makePlayButton(payload.socket_id);
 });
 
+socket.on('uninvited', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makeInviteButton(payload.socket_id);
+});
+
 function makeInvitedButton(socketId) {
   const newNode = $('<button class="btn btn-primary">Invited</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending uninvite command', JSON.stringify(payload));
+    socket.emit('uninvite', payload);
+  });
+
   $(`.socket_${socketId} button`).replaceWith(newNode);
 }
 
@@ -160,5 +193,5 @@ function makeInviteButton(socketId) {
     socket.emit('invite', payload);
   });
 
-  return newNode;
+  $(`.socket_${socketId} button`).replaceWith(newNode);
 }
