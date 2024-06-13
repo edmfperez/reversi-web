@@ -1,6 +1,4 @@
-// Initialize Socket.IO client
-const socket = io();
-
+// Extract the username from the URL
 const params = new URLSearchParams(window.location.search);
 let username = decodeURI(params.get('username'));
 let chatRoom = params.get('game_id') || 'lobby';
@@ -59,6 +57,20 @@ function uninvitePlayer(playerId) {
   };
   console.log('Client log message: Sending uninvite player command', JSON.stringify(request));
   socket.emit('uninvite_player', request);
+}
+
+function makePlayButton(socketId) {
+  const newNode = $('<button class="btn btn-success">Play</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending game start command', JSON.stringify(payload));
+    socket.emit('game_start', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
 }
 
 socket.on('log', (message) => {
@@ -163,6 +175,20 @@ socket.on('uninvited', (payload) => {
   makeInviteButton(payload.socket_id);
 });
 
+socket.on('game_start_response', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  window.location.href = `game.html?username=${username}&game_id=${payload.game_id}`;
+});
+
 function makeInvitedButton(socketId) {
   const newNode = $('<button class="btn btn-primary">Invited</button>');
 
@@ -174,11 +200,6 @@ function makeInvitedButton(socketId) {
     socket.emit('uninvite', payload);
   });
 
-  $(`.socket_${socketId} button`).replaceWith(newNode);
-}
-
-function makePlayButton(socketId) {
-  const newNode = $('<button class="btn btn-success">Play</button>');
   $(`.socket_${socketId} button`).replaceWith(newNode);
 }
 

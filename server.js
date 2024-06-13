@@ -49,7 +49,9 @@ io.on('connection', (socket) => {
       message: data.message,
       room: data.room
     };
-    io.in(data.room).emit('chat message', response);
+    io.in(data.room).emit('chat message
+
+', response);
   });
 
   socket.on('invite', (payload) => {
@@ -70,9 +72,7 @@ io.on('connection', (socket) => {
     }
 
     const response = {
-      result
-
-: 'success',
+      result: 'success',
       socket_id: requestedUser
     };
 
@@ -104,6 +104,33 @@ io.on('connection', (socket) => {
 
     socket.emit('uninvited', response);
     io.to(requestedUser).emit('uninvited', { result: 'success', socket_id: socket.id });
+  });
+
+  socket.on('game_start', (payload) => {
+    console.log('Server received the game start command', payload);
+
+    if (!payload || !payload.requested_user) {
+      console.log('Game start command failed', payload);
+      return;
+    }
+
+    const requestedUser = payload.requested_user;
+    const room = players[socket.id].room;
+    const username = players[socket.id].username;
+
+    if (!requestedUser || !players[requestedUser] || players[requestedUser].room !== room) {
+      console.log('Game start command failed', payload);
+      return;
+    }
+
+    const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
+    const response = {
+      result: 'success',
+      game_id: gameId
+    };
+
+    socket.emit('game_start_response', response);
+    io.to(requestedUser).emit('game_start_response', response);
   });
 
   socket.on('disconnect', () => {
