@@ -14,7 +14,29 @@ app.get('/', (req, res) => {
 });
 
 const players = {};
-const invites = {};
+const games = {};
+
+function createNewBoard() {
+  const board = Array(8).fill().map(() => Array(8).fill(null));
+  // Initialize the board with starting positions
+  board[3][3] = 'white';
+  board[3][4] = 'black';
+  board[4][3] = 'black';
+  board[4][4] = 'white';
+  return board;
+}
+
+function getScore(board) {
+  let whiteCount = 0;
+  let blackCount = 0;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (board[row][col] === 'white') whiteCount++;
+      if (board[row][col] === 'black') blackCount++;
+    }
+  }
+  return { whiteCount, blackCount };
+}
 
 io.on('connection', (socket) => {
   console.log('A user connected', socket.id);
@@ -68,15 +90,20 @@ io.on('connection', (socket) => {
       return;
     }
 
-    invites[socket.id] = requestedUser;
+    const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
+    games[gameId] = {
+      players: [socket.id, requestedUser],
+      board: createNewBoard(),
+      currentPlayer: 'black' // Black goes first
+    };
 
     const response = {
       result: 'success',
-      socket_id: requestedUser
+      game_id: gameId
     };
 
-    socket.emit('invite_response', response);
     io.to(requestedUser).emit('invited', { result: 'success', socket_id: socket.id });
+    socket.emit('invite_response', response);
   });
 
   socket.on('uninvite', (payload) => {
@@ -93,8 +120,6 @@ io.on('connection', (socket) => {
       console.log('Uninvite command failed', payload);
       return;
     }
-
-    delete invites[socket.id];
 
     const response = {
       result: 'success',
@@ -127,6 +152,30 @@ io.on('connection', (socket) => {
 
     socket.emit('game_start_response', response);
     io.to(requestedUser).emit('game_start_response', response);
+  });
+
+  socket.on('play_token', (data) => {
+    const gameId = data.room;
+    const game = games[gameId];
+    if (!game) return;
+
+    const { row, col, color } = data;
+    game.board[row][col] = color;
+
+    const { whiteCount, blackCount } = getScore(game.board);
+
+    const response = {
+      board: game.board,
+      whiteCount,
+      blackCount,
+      gameOver: whiteCount + blackCount === 64
+    };
+
+    io.in(gameId).emit('game_update', response);
+
+    if (response.gameOver) {
+      io.in(gameId).emit('game_over', { message: 'Game Over' });
+    }
   });
 
   socket.on('disconnect', () => {
