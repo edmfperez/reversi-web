@@ -5,7 +5,7 @@ const params = new URLSearchParams(window.location.search);
 let username = decodeURI(params.get('username'));
 let chatRoom = params.get('game_id') || 'lobby';
 
-if (!username || username === 'null') {
+if (!username || username === 'null' || username === '') {
   username = 'Guest';
 }
 
@@ -110,3 +110,55 @@ socket.on('player_disconnected', (payload) => {
     domElements.fadeOut(500, () => domElements.remove());
   }
 });
+
+socket.on('invite_response', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makeInvitedButton(payload.socket_id);
+});
+
+socket.on('invited', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makePlayButton(payload.socket_id);
+});
+
+function makeInvitedButton(socketId) {
+  const newNode = $('<button class="btn btn-primary">Invited</button>');
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
+function makePlayButton(socketId) {
+  const newNode = $('<button class="btn btn-success">Play</button>');
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
+function makeInviteButton(socketId) {
+  const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending invite command', JSON.stringify(payload));
+    socket.emit('invite', payload);
+  });
+
+  return newNode;
+}
