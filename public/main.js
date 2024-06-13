@@ -63,10 +63,6 @@ socket.on('join_room_response', (payload) => {
     return;
   }
 
-  if (payload.socket_id === socket.id) {
-    return;
-  }
-
   const domElements = $(`.socket_${payload.socket_id}`);
   if (domElements.length !== 0) {
     return;
