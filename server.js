@@ -53,12 +53,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('invite', (payload) => {
-    if (!payload || !payload.to) {
+    if (!payload || !payload.requested_user) {
       console.log('Invite command failed', payload);
       return;
     }
 
-    const requestedUser = payload.to;
+    const requestedUser = payload.requested_user;
     const room = players[socket.id].room;
     const username = players[socket.id].username;
 
@@ -77,12 +77,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('uninvite', (payload) => {
-    if (!payload || !payload.to) {
+    if (!payload || !payload.requested_user) {
       console.log('Uninvite command failed', payload);
       return;
     }
 
-    const requestedUser = payload.to;
+    const requestedUser = payload.requested_user;
     const room = players[socket.id].room;
     const username = players[socket.id].username;
 
