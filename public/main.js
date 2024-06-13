@@ -15,7 +15,7 @@ let myColor;
 let board = Array(8).fill().map(() => Array(8).fill(null));
 
 $(document).ready(() => {
-  $('#lobby-title').text(`${username}'s Lobby`);
+  $('#game-title').text(`${username}'s Game`);
 
   const request = {
     room: chatRoom,
@@ -43,12 +43,14 @@ function createBoard() {
   const boardElement = $('#game-board');
   boardElement.empty();
   for (let row = 0; row < 8; row++) {
+    const tr = $('<tr></tr>');
     for (let col = 0; col < 8; col++) {
-      const cell = $('<div class="cell"></div>');
-      cell.attr('id', `cell_${row}_${col}`);
-      cell.click(() => playToken(row, col));
-      boardElement.append(cell);
+      const td = $(`<td id="cell_${row}_${col}"></td>`);
+      td.append(`<img src="assets/images/error.gif" class="image-fluid" alt="error">`);
+      td.click(() => playToken(row, col));
+      tr.append(td);
     }
+    boardElement.append(tr);
   }
 }
 
@@ -68,11 +70,13 @@ function updateBoard(newBoard) {
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       const cell = $(`#cell_${row}_${col}`);
-      cell.removeClass('black white');
+      cell.find('img').removeClass('black white');
       if (newBoard[row][col] === 'black') {
-        cell.addClass('black');
+        cell.find('img').attr('src', 'assets/images/black.gif').addClass('black');
       } else if (newBoard[row][col] === 'white') {
-        cell.addClass('white');
+        cell.find('img').attr('src', 'assets/images/white.gif').addClass('white');
+      } else {
+        cell.find('img').attr('src', 'assets/images/empty.gif');
       }
     }
   }

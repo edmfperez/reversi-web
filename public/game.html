@@ -5,45 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reversi: Game</title>
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background-color: darkseagreen;
-    }
-    #game-board {
-      display: grid;
-      grid-template-columns: repeat(8, 50px);
-      grid-template-rows: repeat(8, 50px);
-      gap: 1px;
-    }
-    .cell {
-      width: 50px;
-      height: 50px;
-      background-color: white;
-      border: 1px solid black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .black {
-      background-color: black;
-    }
-    .white {
-      background-color: white;
-    }
-  </style>
+  <link rel="stylesheet" href="assets/css/game.css">
 </head>
 <body>
   <div class="container-fluid">
     <div class="row mt-3">
       <div class="col text-center">
-        <h1 id="lobby-title">Welcome to the Game</h1>
+        <h1 id="game-title">Welcome to the Game</h1>
         <p id="username-display">Players can play Reversi here.</p>
         <div id="game-info">
           <p id="my-color">Your color: </p>
           <p>Score: White - <span id="white-score">0</span>, Black - <span id="black-score">0</span></p>
         </div>
-        <div id="game-board"></div>
+        <div id="game-board-container" class="text-center">
+          <table id="game-board" class="table-responsive mx-auto">
+            <!-- Game board cells will be dynamically generated here -->
+          </table>
+        </div>
         <button id="quit" class="btn btn-danger mt-2">Quit</button>
         <p id="game-over" class="mt-2"></p>
         <div id="chat-section" class="mt-3">
