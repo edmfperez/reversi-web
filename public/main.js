@@ -5,7 +5,7 @@ const params = new URLSearchParams(window.location.search);
 let username = decodeURI(params.get('username'));
 let chatRoom = params.get('game_id') || 'lobby';
 
-if (!username || username === 'null') {
+if (!username || username === 'null' || username === '') {
   username = 'Guest';
 }
 
