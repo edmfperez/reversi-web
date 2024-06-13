@@ -49,9 +49,7 @@ io.on('connection', (socket) => {
       message: data.message,
       room: data.room
     };
-    io.in(data.room).emit('chat message
-
-', response);
+    io.in(data.room).emit('chat message', response);
   });
 
   socket.on('invite', (payload) => {
