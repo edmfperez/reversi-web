@@ -53,14 +53,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('invite', (payload) => {
-    console.log('Server received the invite command', payload);
-
-    if (!payload || !payload.requested_user) {
+    if (!payload || !payload.to) {
       console.log('Invite command failed', payload);
       return;
     }
 
-    const requestedUser = payload.requested_user;
+    const requestedUser = payload.to;
     const room = players[socket.id].room;
     const username = players[socket.id].username;
 
@@ -79,14 +77,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('uninvite', (payload) => {
-    console.log('Server received the uninvite command', payload);
-
-    if (!payload || !payload.requested_user) {
+    if (!payload || !payload.to) {
       console.log('Uninvite command failed', payload);
       return;
     }
 
-    const requestedUser = payload.requested_user;
+    const requestedUser = payload.to;
     const room = players[socket.id].room;
     const username = players[socket.id].username;
 
@@ -105,8 +101,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('game_start', (payload) => {
-    console.log('Server received the game start command', payload);
-
     if (!payload || !payload.requested_user) {
       console.log('Game start command failed', payload);
       return;
