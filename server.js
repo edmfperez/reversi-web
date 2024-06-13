@@ -14,6 +14,7 @@ app.get('/', (req, res) => {
 });
 
 const players = {};
+const invites = {};
 
 io.on('connection', (socket) => {
   console.log('A user connected', socket.id);
@@ -67,6 +68,8 @@ io.on('connection', (socket) => {
       return;
     }
 
+    invites[socket.id] = requestedUser;
+
     const response = {
       result: 'success',
       socket_id: requestedUser
@@ -91,6 +94,8 @@ io.on('connection', (socket) => {
       return;
     }
 
+    delete invites[socket.id];
+
     const response = {
       result: 'success',
       socket_id: requestedUser
@@ -100,18 +105,17 @@ io.on('connection', (socket) => {
     io.to(requestedUser).emit('uninvited', { result: 'success', socket_id: socket.id });
   });
 
-  socket.on('game_start', (payload) => {
-    if (!payload || !payload.requested_user) {
-      console.log('Game start command failed', payload);
+  socket.on('accept_invite', (payload) => {
+    if (!payload || !payload.to) {
+      console.log('Accept invite command failed', payload);
       return;
     }
 
-    const requestedUser = payload.requested_user;
+    const requestedUser = payload.to;
     const room = players[socket.id].room;
-    const username = players[socket.id].username;
 
     if (!requestedUser || !players[requestedUser] || players[requestedUser].room !== room) {
-      console.log('Game start command failed', payload);
+      console.log('Accept invite command failed', payload);
       return;
     }
 

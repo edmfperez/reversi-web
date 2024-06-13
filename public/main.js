@@ -61,15 +61,21 @@ function uninvitePlayer(playerId) {
   socket.emit('uninvite', request);
 }
 
+function acceptInvite(playerId) {
+  const request = {
+    room: chatRoom,
+    from: username,
+    to: playerId
+  };
+  console.log('Client log message: Accepting invite', JSON.stringify(request));
+  socket.emit('accept_invite', request);
+}
+
 function makePlayButton(socketId) {
   const newNode = $('<button class="btn btn-success">Play</button>');
 
   newNode.click(() => {
-    const payload = {
-      requested_user: socketId
-    };
-    console.log('Client log message: Sending game start command', JSON.stringify(payload));
-    socket.emit('game_start', payload);
+    acceptInvite(socketId);
   });
 
   $(`.socket_${socketId} button`).replaceWith(newNode);
@@ -79,11 +85,7 @@ function makeInviteButton(socketId) {
   const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
 
   newNode.click(() => {
-    const payload = {
-      requested_user: socketId
-    };
-    console.log('Client log message: Sending invite command', JSON.stringify(payload));
-    socket.emit('invite', payload);
+    invitePlayer(socketId);
   });
 
   $(`.socket_${socketId} button`).replaceWith(newNode);
@@ -93,11 +95,7 @@ function makeInvitedButton(socketId) {
   const newNode = $('<button class="btn btn-primary">Invited</button>');
 
   newNode.click(() => {
-    const payload = {
-      requested_user: socketId
-    };
-    console.log('Client log message: Sending uninvite command', JSON.stringify(payload));
-    socket.emit('uninvite', payload);
+    uninvitePlayer(socketId);
   });
 
   $(`.socket_${socketId} button`).replaceWith(newNode);
