@@ -5,11 +5,14 @@ const params = new URLSearchParams(window.location.search);
 let username = decodeURI(params.get('username'));
 let chatRoom = params.get('game_id') || 'lobby';
 
-if (!username || username === 'null') {
+if (!username || username === 'null' || username === '') {
   username = 'Guest';
 }
 
 document.getElementById('username-display').innerText = `Welcome, ${username}`;
+
+let myColor;
+let board = Array(8).fill().map(() => Array(8).fill(null));
 
 $(document).ready(() => {
   $('#lobby-title').text(`${username}'s Lobby`);
@@ -27,7 +30,54 @@ $(document).ready(() => {
       $('#send-button').click();
     }
   });
+
+  $('#quit').click(() => {
+    socket.emit('quit_game', { username, room: chatRoom });
+    window.location.href = `lobby.html?username=${username}`;
+  });
+
+  createBoard();
 });
+
+function createBoard() {
+  const boardElement = $('#game-board');
+  boardElement.empty();
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const cell = $('<div class="cell"></div>');
+      cell.attr('id', `cell_${row}_${col}`);
+      cell.click(() => playToken(row, col));
+      boardElement.append(cell);
+    }
+  }
+}
+
+function playToken(row, col) {
+  const request = {
+    room: chatRoom,
+    username: username,
+    row: row,
+    col: col,
+    color: myColor
+  };
+  console.log('Client log message: Sending play token command', JSON.stringify(request));
+  socket.emit('play_token', request);
+}
+
+function updateBoard(newBoard) {
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const cell = $(`#cell_${row}_${col}`);
+      cell.removeClass('black white');
+      if (newBoard[row][col] === 'black') {
+        cell.addClass('black');
+      } else if (newBoard[row][col] === 'white') {
+        cell.addClass('white');
+      }
+    }
+  }
+  board = newBoard;
+}
 
 function sendChatMessage() {
   const message = $('#chat-input').val();
@@ -39,66 +89,6 @@ function sendChatMessage() {
   console.log('Client log message: Sending chat message', JSON.stringify(request));
   socket.emit('chat message', request);
   $('#chat-input').val('');
-}
-
-function invitePlayer(playerId) {
-  const request = {
-    room: chatRoom,
-    from: username,
-    to: playerId
-  };
-  console.log('Client log message: Sending invite player command', JSON.stringify(request));
-  socket.emit('invite', request);
-}
-
-function uninvitePlayer(playerId) {
-  const request = {
-    room: chatRoom,
-    from: username,
-    to: playerId
-  };
-  console.log('Client log message: Sending uninvite player command', JSON.stringify(request));
-  socket.emit('uninvite', request);
-}
-
-function acceptInvite(playerId) {
-  const request = {
-    room: chatRoom,
-    from: username,
-    to: playerId
-  };
-  console.log('Client log message: Accepting invite', JSON.stringify(request));
-  socket.emit('accept_invite', request);
-}
-
-function makePlayButton(socketId) {
-  const newNode = $('<button class="btn btn-success">Play</button>');
-
-  newNode.click(() => {
-    acceptInvite(socketId);
-  });
-
-  $(`.socket_${socketId} button`).replaceWith(newNode);
-}
-
-function makeInviteButton(socketId) {
-  const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
-
-  newNode.click(() => {
-    invitePlayer(socketId);
-  });
-
-  $(`.socket_${socketId} button`).replaceWith(newNode);
-}
-
-function makeInvitedButton(socketId) {
-  const newNode = $('<button class="btn btn-primary">Invited</button>');
-
-  newNode.click(() => {
-    uninvitePlayer(socketId);
-  });
-
-  $(`.socket_${socketId} button`).replaceWith(newNode);
 }
 
 socket.on('log', (message) => {
@@ -115,6 +105,8 @@ socket.on('join_room_response', (payload) => {
     console.log(payload.message);
     return;
   }
+
+  if (payload.room !== chatRoom) return;
 
   const domElements = $(`.socket_${payload.socket_id}`);
   if (domElements.length !== 0) {
@@ -133,14 +125,6 @@ socket.on('join_room_response', (payload) => {
   const newNode = $(newMessage).hide();
   $('#chat-messages').prepend(newNode);
   newNode.fadeIn(500);
-
-  $('#players').empty();
-  payload.players.forEach(player => {
-    const playerDiv = `<div class="player socket_${player.id}">
-      ${player.username} <button class="invite-btn" onclick="invitePlayer('${player.id}')">Invite</button>
-    </div>`;
-    $('#players').append(playerDiv);
-  });
 });
 
 socket.on('chat message', (data) => {
@@ -161,48 +145,6 @@ socket.on('player_disconnected', (payload) => {
   }
 });
 
-socket.on('invite_response', (payload) => {
-  if (!payload) {
-    console.log('Server did not send a payload');
-    return;
-  }
-
-  if (payload.result === 'fail') {
-    console.log(payload.message);
-    return;
-  }
-
-  makeInvitedButton(payload.socket_id);
-});
-
-socket.on('invited', (payload) => {
-  if (!payload) {
-    console.log('Server did not send a payload');
-    return;
-  }
-
-  if (payload.result === 'fail') {
-    console.log(payload.message);
-    return;
-  }
-
-  makePlayButton(payload.socket_id);
-});
-
-socket.on('uninvited', (payload) => {
-  if (!payload) {
-    console.log('Server did not send a payload');
-    return;
-  }
-
-  if (payload.result === 'fail') {
-    console.log(payload.message);
-    return;
-  }
-
-  makeInviteButton(payload.socket_id);
-});
-
 socket.on('game_start_response', (payload) => {
   if (!payload) {
     console.log('Server did not send a payload');
@@ -215,4 +157,34 @@ socket.on('game_start_response', (payload) => {
   }
 
   window.location.href = `game.html?username=${username}&game_id=${payload.game_id}`;
+});
+
+socket.on('game_update', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  updateBoard(payload.board);
+  $('#white-score').text(payload.whiteCount);
+  $('#black-score').text(payload.blackCount);
+
+  if (payload.gameOver) {
+    $('#game-over').text('Game Over');
+  }
+});
+
+socket.on('assign_color', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  myColor = payload.color;
+  $('#my-color').text(`Your color: ${myColor}`);
 });
