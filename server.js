@@ -70,12 +70,40 @@ io.on('connection', (socket) => {
     }
 
     const response = {
-      result: 'success',
+      result
+
+: 'success',
       socket_id: requestedUser
     };
 
     socket.emit('invite_response', response);
     io.to(requestedUser).emit('invited', { result: 'success', socket_id: socket.id });
+  });
+
+  socket.on('uninvite', (payload) => {
+    console.log('Server received the uninvite command', payload);
+
+    if (!payload || !payload.requested_user) {
+      console.log('Uninvite command failed', payload);
+      return;
+    }
+
+    const requestedUser = payload.requested_user;
+    const room = players[socket.id].room;
+    const username = players[socket.id].username;
+
+    if (!requestedUser || !players[requestedUser] || players[requestedUser].room !== room) {
+      console.log('Uninvite command failed', payload);
+      return;
+    }
+
+    const response = {
+      result: 'success',
+      socket_id: requestedUser
+    };
+
+    socket.emit('uninvited', response);
+    io.to(requestedUser).emit('uninvited', { result: 'success', socket_id: socket.id });
   });
 
   socket.on('disconnect', () => {
