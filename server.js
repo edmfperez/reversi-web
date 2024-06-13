@@ -53,6 +53,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('invite', (payload) => {
+    console.log('Server received the invite command', payload);
+
     if (!payload || !payload.requested_user) {
       console.log('Invite command failed', payload);
       return;
@@ -77,6 +79,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('uninvite', (payload) => {
+    console.log('Server received the uninvite command', payload);
+
     if (!payload || !payload.requested_user) {
       console.log('Uninvite command failed', payload);
       return;
@@ -101,6 +105,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('game_start', (payload) => {
+    console.log('Server received the game start command', payload);
+
     if (!payload || !payload.requested_user) {
       console.log('Game start command failed', payload);
       return;
