@@ -5,7 +5,7 @@ const params = new URLSearchParams(window.location.search);
 let username = decodeURI(params.get('username'));
 let chatRoom = params.get('game_id') || 'lobby';
 
-if (!username || username === 'null') {
+if (!username || username === 'null' || username === '') {
   username = 'Guest';
 }
 
@@ -70,34 +70,6 @@ function makePlayButton(socketId) {
     };
     console.log('Client log message: Sending game start command', JSON.stringify(payload));
     socket.emit('game_start', payload);
-  });
-
-  $(`.socket_${socketId} button`).replaceWith(newNode);
-}
-
-function makeInviteButton(socketId) {
-  const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
-
-  newNode.click(() => {
-    const payload = {
-      requested_user: socketId
-    };
-    console.log('Client log message: Sending invite command', JSON.stringify(payload));
-    socket.emit('invite', payload);
-  });
-
-  $(`.socket_${socketId} button`).replaceWith(newNode);
-}
-
-function makeInvitedButton(socketId) {
-  const newNode = $('<button class="btn btn-primary">Invited</button>');
-
-  newNode.click(() => {
-    const payload = {
-      requested_user: socketId
-    };
-    console.log('Client log message: Sending uninvite command', JSON.stringify(payload));
-    socket.emit('uninvite', payload);
   });
 
   $(`.socket_${socketId} button`).replaceWith(newNode);
@@ -218,3 +190,31 @@ socket.on('game_start_response', (payload) => {
 
   window.location.href = `game.html?username=${username}&game_id=${payload.game_id}`;
 });
+
+function makeInvitedButton(socketId) {
+  const newNode = $('<button class="btn btn-primary">Invited</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending uninvite command', JSON.stringify(payload));
+    socket.emit('uninvite', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
+function makeInviteButton(socketId) {
+  const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending invite command', JSON.stringify(payload));
+    socket.emit('invite', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
