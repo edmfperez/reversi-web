@@ -51,6 +51,30 @@ function invitePlayer(playerId) {
   socket.emit('invite_player', request);
 }
 
+function uninvitePlayer(playerId) {
+  const request = {
+    room: chatRoom,
+    from: username,
+    to: playerId
+  };
+  console.log('Client log message: Sending uninvite player command', JSON.stringify(request));
+  socket.emit('uninvite_player', request);
+}
+
+function makePlayButton(socketId) {
+  const newNode = $('<button class="btn btn-success">Play</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending game start command', JSON.stringify(payload));
+    socket.emit('game_start', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
 socket.on('log', (message) => {
   console.log(message);
 });
@@ -110,3 +134,87 @@ socket.on('player_disconnected', (payload) => {
     domElements.fadeOut(500, () => domElements.remove());
   }
 });
+
+socket.on('invite_response', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makeInvitedButton(payload.socket_id);
+});
+
+socket.on('invited', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makePlayButton(payload.socket_id);
+});
+
+socket.on('uninvited', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makeInviteButton(payload.socket_id);
+});
+
+socket.on('game_start_response', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  window.location.href = `game.html?username=${username}&game_id=${payload.game_id}`;
+});
+
+function makeInvitedButton(socketId) {
+  const newNode = $('<button class="btn btn-primary">Invited</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending uninvite command', JSON.stringify(payload));
+    socket.emit('uninvite', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
+function makeInviteButton(socketId) {
+  const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending invite command', JSON.stringify(payload));
+    socket.emit('invite', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
