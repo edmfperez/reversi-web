@@ -300,6 +300,11 @@ socket.on('assign_color', (payload) => {
   myColor = payload.color;
   console.log(`Assigned color: ${myColor}`); // Debug statement
   document.getElementById('my-color').innerText = `Your color: ${myColor}`;
+
+  // Fallback to ensure the color text is updated
+  setTimeout(() => {
+    document.getElementById('my-color').innerText = `Your color: ${myColor}`;
+}, 500);
 });
 
 
