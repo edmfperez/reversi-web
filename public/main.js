@@ -36,7 +36,9 @@ $(document).ready(() => {
     window.location.href = `lobby.html?username=${username}`;
   });
 
-  createBoard();
+  if (chatRoom !== 'lobby') {
+    createBoard();
+  }
 });
 
 function createBoard() {
@@ -46,7 +48,7 @@ function createBoard() {
     const tr = $('<tr></tr>');
     for (let col = 0; col < 8; col++) {
       const td = $(`<td id="cell_${row}_${col}"></td>`);
-      td.append(`<img src="assets/images/error.gif" class="image-fluid" alt="error">`);
+      td.append(`<img src="assets/images/empty.gif" class="image-fluid" alt="empty">`);
       td.click(() => playToken(row, col));
       tr.append(td);
     }
@@ -147,6 +149,48 @@ socket.on('player_disconnected', (payload) => {
   if (domElements.length !== 0) {
     domElements.fadeOut(500, () => domElements.remove());
   }
+});
+
+socket.on('invite_response', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makeInvitedButton(payload.socket_id);
+});
+
+socket.on('invited', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makePlayButton(payload.socket_id);
+});
+
+socket.on('uninvited', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  makeInviteButton(payload.socket_id);
 });
 
 socket.on('game_start_response', (payload) => {

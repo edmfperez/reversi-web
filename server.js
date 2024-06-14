@@ -90,20 +90,13 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
-    games[gameId] = {
-      players: [socket.id, requestedUser],
-      board: createNewBoard(),
-      currentPlayer: 'black' // Black goes first
-    };
-
     const response = {
       result: 'success',
-      game_id: gameId
+      socket_id: requestedUser
     };
 
-    io.to(requestedUser).emit('invited', { result: 'success', socket_id: socket.id });
     socket.emit('invite_response', response);
+    io.to(requestedUser).emit('invited', { result: 'success', socket_id: socket.id });
   });
 
   socket.on('uninvite', (payload) => {
@@ -139,12 +132,18 @@ io.on('connection', (socket) => {
     const requestedUser = payload.to;
     const room = players[socket.id].room;
 
-    if (!requestedUser || !players[requestedUser] || players[requestedUser].room !== room) {
+    if (!requestedUser || players[requestedUser].room !== room) {
       console.log('Accept invite command failed', payload);
       return;
     }
 
     const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
+    games[gameId] = {
+      players: [socket.id, requestedUser],
+      board: createNewBoard(),
+      currentPlayer: 'black' // Black goes first
+    };
+
     const response = {
       result: 'success',
       game_id: gameId
