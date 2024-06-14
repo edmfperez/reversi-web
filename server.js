@@ -16,39 +16,36 @@ app.get('/', (req, res) => {
 const players = {};
 const games = {};
 
-function createNewBoard() {
-  const board = Array(8).fill().map(() => Array(8).fill(null));
-  // Initialize the board with starting positions
-  board[3][3] = 'white';
-  board[3][4] = 'black';
-  board[4][3] = 'black';
-  board[4][4] = 'white';
-  return board;
-}
-
+// Create a new game object
 function createNewGame() {
   const newGame = {
-    player_white: { socket: '', username: '' },
-    player_black: { socket: '', username: '' },
-    last_move_time: Date.now(),
+    player_white: {
+      socket: '',
+      username: ''
+    },
+    player_black: {
+      socket: '',
+      username: ''
+    },
+    last_move_time: new Date().getTime(),
     whose_turn: 'white',
     board: [
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', 'w', 'b', ' ', ' ', ' '],
-      [' ', ' ', ' ', 'b', 'w', ' ', ' ', ' '],
+      [' ', ' ', ' ', 'W', 'B', ' ', ' ', ' '],
+      [' ', ' ', ' ', 'B', 'W', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-    ],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+    ]
   };
   return newGame;
 }
 
 function sendGameUpdate(socket, gameId, message) {
   if (!games[gameId]) {
-    console.log(`No game exists with gameId ${gameId}. Making a new game.`);
+    console.log(`No game exists with game_id: ${gameId}. Creating a new game.`);
     games[gameId] = createNewGame();
   }
 
@@ -56,7 +53,7 @@ function sendGameUpdate(socket, gameId, message) {
     result: 'success',
     game_id: gameId,
     game: games[gameId],
-    message: message,
+    message: message
   };
 
   io.in(gameId).emit('game_update', payload);
@@ -73,7 +70,7 @@ io.on('connection', (socket) => {
 
     players[socket.id] = {
       username: payload.username,
-      room: payload.room,
+      room: payload.room
     };
 
     socket.join(payload.room);
@@ -84,13 +81,13 @@ io.on('connection', (socket) => {
       username: payload.username,
       room: payload.room,
       count: roomPlayers.length,
-      players: roomPlayers.map(id => ({ id, username: players[id].username })),
+      players: roomPlayers.map(id => ({ id, username: players[id].username }))
     };
 
     io.in(payload.room).emit('join_room_response', response);
 
     if (payload.room !== 'lobby') {
-      sendGameUpdate(socket, payload.room, 'Welcome to the game!');
+      sendGameUpdate(socket, payload.room, 'A new player has joined the game.');
     }
   });
 
@@ -98,7 +95,7 @@ io.on('connection', (socket) => {
     const response = {
       username: data.username,
       message: data.message,
-      room: data.room,
+      room: data.room
     };
     io.in(data.room).emit('chat message', response);
   });
@@ -118,16 +115,9 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
-    games[gameId] = {
-      players: [socket.id, requestedUser],
-      board: createNewBoard(),
-      currentPlayer: 'black', // Black goes first
-    };
-
     const response = {
       result: 'success',
-      game_id: gameId,
+      game_id: room
     };
 
     io.to(requestedUser).emit('invited', { result: 'success', socket_id: socket.id });
@@ -151,7 +141,7 @@ io.on('connection', (socket) => {
 
     const response = {
       result: 'success',
-      socket_id: requestedUser,
+      socket_id: requestedUser
     };
 
     socket.emit('uninvited', response);
@@ -172,10 +162,9 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
     const response = {
       result: 'success',
-      game_id: gameId,
+      game_id: room
     };
 
     socket.emit('game_start_response', response);
@@ -190,14 +179,15 @@ io.on('connection', (socket) => {
     const { row, col, color } = data;
     game.board[row][col] = color;
 
-    const whiteCount = game.board.flat().filter(cell => cell === 'white').length;
-    const blackCount = game.board.flat().filter(cell => cell === 'black').length;
+    const { whiteCount, blackCount } = getScore(game.board);
 
     const response = {
-      board: game.board,
-      whiteCount,
-      blackCount,
-      gameOver: whiteCount + blackCount === 64,
+      game: {
+        board: game.board,
+        whiteCount,
+        blackCount
+      },
+      gameOver: whiteCount + blackCount === 64
     };
 
     io.in(gameId).emit('game_update', response);
@@ -216,7 +206,7 @@ io.on('connection', (socket) => {
       const response = {
         username: player.username,
         room: room,
-        count: roomPlayers.length,
+        count: roomPlayers.length
       };
 
       io.in(room).emit('player_disconnected', response);
@@ -224,6 +214,18 @@ io.on('connection', (socket) => {
     console.log('User disconnected', socket.id);
   });
 });
+
+function getScore(board) {
+  let whiteCount = 0;
+  let blackCount = 0;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (board[row][col] === 'W') whiteCount++;
+      if (board[row][col] === 'B') blackCount++;
+    }
+  }
+  return { whiteCount, blackCount };
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
