@@ -16,7 +16,6 @@ app.get('/', (req, res) => {
 const players = {};
 const games = {};
 
-// Create a new game object
 function createNewGame() {
   const newGame = {
     player_white: {
@@ -74,17 +73,53 @@ function sendGameUpdate(socket, gameId, message) {
   }
 
   const game = games[gameId];
-  const validMoves = calculateLegalMoves(game.whose_turn, game.board); // Add this line
+  const validMoves = calculateLegalMoves(game.whose_turn, game.board);
+
+  let whiteSum = 0;
+  let blackSum = 0;
+  let legalMovesCount = 0;
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (game.legal_moves[row][col] !== ' ') {
+        legalMovesCount++;
+      }
+      if (game.board[row][col] === 'W') {
+        whiteSum++;
+      }
+      if (game.board[row][col] === 'B') {
+        blackSum++;
+      }
+    }
+  }
+
+  let gameOver = false;
+  let winner = 'tie';
+
+  if (legalMovesCount === 0) {
+    gameOver = true;
+    if (whiteSum > blackSum) {
+      winner = 'white';
+    } else if (blackSum > whiteSum) {
+      winner = 'black';
+    }
+  }
 
   const payload = {
     result: 'success',
     game_id: gameId,
     game: games[gameId],
     message: message,
-    validMoves: validMoves // Add this line
+    validMoves: validMoves,
+    gameOver: gameOver,
+    winner: winner
   };
 
   io.in(gameId).emit('game_update', payload);
+
+  if (gameOver) {
+    io.in(gameId).emit('game_over', { message: `Game Over. ${winner === 'tie' ? 'It\'s a tie!' : `${winner} wins!`}` });
+  }
 }
 
 function isPlayerTurn(game, socketId, color) {
@@ -346,6 +381,28 @@ io.on('connection', (socket) => {
 
     const { whiteCount, blackCount } = getScore(game.board);
 
+    // Check if game is over
+    let gameOver = false;
+    let winner = 'tie';
+    let legalMovesCount = 0;
+
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        if (game.legal_moves[row][col] !== ' ') {
+          legalMovesCount++;
+        }
+      }
+    }
+
+    if (legalMovesCount === 0) {
+      gameOver = true;
+      if (whiteCount > blackCount) {
+        winner = 'white';
+      } else if (blackCount > whiteCount) {
+        winner = 'black';
+      }
+    }
+
     const response = {
       game: {
         board: game.board,
@@ -354,13 +411,14 @@ io.on('connection', (socket) => {
         whose_turn: game.whose_turn,
         legal_moves: game.legal_moves
       },
-      gameOver: whiteCount + blackCount === 64
+      gameOver: gameOver,
+      winner: winner
     };
 
     io.in(gameId).emit('game_update', response);
 
-    if (response.gameOver) {
-      io.in(gameId).emit('game_over', { message: 'Game Over' });
+    if (gameOver) {
+      io.in(gameId).emit('game_over', { message: `Game Over. ${winner === 'tie' ? 'It\'s a tie!' : `${winner} wins!`}` });
     }
   });
 
