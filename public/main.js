@@ -299,17 +299,83 @@ socket.on('game_update', (payload) => {
     return;
   }
 
-  updateBoard(payload.game.board);
-  $('#white-score').text(payload.game.whiteCount);
-  $('#black-score').text(payload.game.blackCount);
+  const board = payload.game.board;
 
-  updateTurnDisplay(payload.game.whose_turn);
-  displayValidMoves(payload.game.validMoves); // Add this line
+  if (typeof board === 'undefined' || board === null) {
+    console.log('Server did not send a valid board to display');
+    return;
+  }
 
-  if (payload.gameOver) {
-    $('#game-over').text('Game Over');
+  const oldBoard = Array(8).fill().map(() => Array(8).fill('?'));
+  const legalMoves = payload.game.legal_moves; // Get legal moves from payload
+
+  const t = Date.now();
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (oldBoard[row][col] !== board[row][col]) {
+        let graphic = '';
+        let altTag = '';
+
+        if (oldBoard[row][col] === '?' && board[row][col] === ' ') {
+          graphic = 'empty.gif';
+          altTag = 'empty space';
+        } else if (oldBoard[row][col] === '?' && board[row][col] === 'W') {
+          graphic = 'empty_to_white.gif';
+          altTag = 'white token';
+        } else if (oldBoard[row][col] === '?' && board[row][col] === 'B') {
+          graphic = 'empty_to_black.gif';
+          altTag = 'black token';
+        } else if (oldBoard[row][col] === ' ' && board[row][col] === 'W') {
+          graphic = 'empty_to_white.gif';
+          altTag = 'white token';
+        } else if (oldBoard[row][col] === ' ' && board[row][col] === 'B') {
+          graphic = 'empty_to_black.gif';
+          altTag = 'black token';
+        } else if (oldBoard[row][col] === 'W' && board[row][col] === ' ') {
+          graphic = 'white_to_empty.gif';
+          altTag = 'empty space';
+        } else if (oldBoard[row][col] === 'B' && board[row][col] === ' ') {
+          graphic = 'black_to_empty.gif';
+          altTag = 'empty space';
+        } else if (oldBoard[row][col] === 'W' && board[row][col] === 'B') {
+          graphic = 'white_to_black.gif';
+          altTag = 'black token';
+        } else if (oldBoard[row][col] === 'B' && board[row][col] === 'W') {
+          graphic = 'black_to_white.gif';
+          altTag = 'white token';
+        } else {
+          graphic = 'error.gif';
+          altTag = 'error';
+        }
+
+        const cell = $(`#cell_${row}_${col}`);
+        cell.html(`<img src="assets/images/${graphic}?time=${t}" class="image-fluid" alt="${altTag}">`);
+      }
+    }
+  }
+
+  // Enforce valid moves
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const cell = $(`#cell_${row}_${col}`);
+      cell.removeClass('legal-move');
+      cell.off('click');
+
+      if (payload.game.whose_turn === myColor && legalMoves[row][col] === myColor.charAt(0)) {
+        cell.addClass('legal-move');
+        cell.click(() => playToken(row, col));
+      }
+    }
+  }
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      oldBoard[row][col] = board[row][col];
+    }
   }
 });
+
 
 socket.on('play_token_response', (payload) => {
   if (payload.result === 'fail') {
