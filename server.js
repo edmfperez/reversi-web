@@ -59,6 +59,17 @@ function sendGameUpdate(socket, gameId, message) {
   io.in(gameId).emit('game_update', payload);
 }
 
+function isPlayerTurn(game, socketId, color) {
+  if (color === 'white' && game.player_white.socket === socketId && game.whose_turn === 'white') {
+    return true;
+  }
+  if (color === 'black' && game.player_black.socket === socketId && game.whose_turn === 'black') {
+    return true;
+  }
+  return false;
+}
+
+
 io.on('connection', (socket) => {
   console.log('A user connected', socket.id);
 
@@ -204,31 +215,41 @@ io.on('connection', (socket) => {
 
   
 
-  socket.on('play_token', (data) => {
-    const gameId = data.room;
-    const game = games[gameId];
-    if (!game) return;
+socket.on('play_token', (data) => {
+  const gameId = data.room;
+  const game = games[gameId];
+  if (!game) return;
 
-    const { row, col, color } = data;
-    game.board[row][col] = color;
+  if (!isPlayerTurn(game, socket.id, data.color)) {
+    console.log('Not your turn');
+    return;
+  }
 
-    const { whiteCount, blackCount } = getScore(game.board);
+  const { row, col, color } = data;
+  game.board[row][col] = color;
 
-    const response = {
-      game: {
-        board: game.board,
-        whiteCount,
-        blackCount
-      },
-      gameOver: whiteCount + blackCount === 64
-    };
+  // Toggle turn
+  game.whose_turn = (color === 'white') ? 'black' : 'white';
 
-    io.in(gameId).emit('game_update', response);
+  const { whiteCount, blackCount } = getScore(game.board);
 
-    if (response.gameOver) {
-      io.in(gameId).emit('game_over', { message: 'Game Over' });
-    }
-  });
+  const response = {
+    game: {
+      board: game.board,
+      whiteCount,
+      blackCount,
+      whose_turn: game.whose_turn // Add this line
+    },
+    gameOver: whiteCount + blackCount === 64
+  };
+
+  io.in(gameId).emit('game_update', response);
+
+  if (response.gameOver) {
+    io.in(gameId).emit('game_over', { message: 'Game Over' });
+  }
+});
+
 
   socket.on('disconnect', () => {
     const player = players[socket.id];
