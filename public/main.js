@@ -15,7 +15,7 @@ let myColor;
 let board = Array(8).fill().map(() => Array(8).fill(null));
 
 $(document).ready(() => {
-  $('#game-title').text(`${username}'s Game`);
+  $('#lobby-title').text(`${username}'s Lobby`);
 
   const request = {
     room: chatRoom,
@@ -97,6 +97,60 @@ function sendChatMessage() {
   $('#chat-input').val('');
 }
 
+function invitePlayer(playerId) {
+  const request = {
+    room: chatRoom,
+    from: username,
+    to: playerId
+  };
+  console.log('Client log message: Sending invite player command', JSON.stringify(request));
+  socket.emit('invite', request);
+}
+
+function makePlayButton(socketId) {
+  const newNode = $('<button class="btn btn-success">Play</button>');
+
+  newNode.click(() => {
+    const payload = {
+      room: chatRoom,
+      from: username,
+      to: socketId
+    };
+    console.log('Client log message: Sending game start command', JSON.stringify(payload));
+    socket.emit('game_start', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
+function makeInviteButton(socketId) {
+  const newNode = $('<button class="btn btn-outline-primary">Invite</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending invite command', JSON.stringify(payload));
+    socket.emit('invite', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
+function makeInvitedButton(socketId) {
+  const newNode = $('<button class="btn btn-primary">Invited</button>');
+
+  newNode.click(() => {
+    const payload = {
+      requested_user: socketId
+    };
+    console.log('Client log message: Sending uninvite command', JSON.stringify(payload));
+    socket.emit('uninvite', payload);
+  });
+
+  $(`.socket_${socketId} button`).replaceWith(newNode);
+}
+
 socket.on('log', (message) => {
   console.log(message);
 });
@@ -111,8 +165,6 @@ socket.on('join_room_response', (payload) => {
     console.log(payload.message);
     return;
   }
-
-  if (payload.room !== chatRoom) return;
 
   const domElements = $(`.socket_${payload.socket_id}`);
   if (domElements.length !== 0) {
@@ -131,6 +183,14 @@ socket.on('join_room_response', (payload) => {
   const newNode = $(newMessage).hide();
   $('#chat-messages').prepend(newNode);
   newNode.fadeIn(500);
+
+  $('#players').empty();
+  payload.players.forEach(player => {
+    const playerDiv = `<div class="player socket_${player.id}">
+      ${player.username} <button class="invite-btn" onclick="invitePlayer('${player.id}')">Invite</button>
+    </div>`;
+    $('#players').append(playerDiv);
+  });
 });
 
 socket.on('chat message', (data) => {
