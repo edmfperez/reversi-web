@@ -286,6 +286,7 @@ socket.on('game_update', (payload) => {
 
   if (payload.gameOver) {
     $('#game-over').text('Game Over');
+    alert('Game Over!');
   }
 });
 
