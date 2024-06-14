@@ -278,9 +278,9 @@ socket.on('game_update', (payload) => {
     return;
   }
 
-  updateBoard(payload.board);
-  $('#white-score').text(payload.whiteCount);
-  $('#black-score').text(payload.blackCount);
+  updateBoard(payload.game.board);
+  $('#white-score').text(payload.game.whiteCount);
+  $('#black-score').text(payload.game.blackCount);
 
   if (payload.gameOver) {
     $('#game-over').text('Game Over');
@@ -369,4 +369,3 @@ socket.on('game_update', (payload) => {
     }
   }
 });
-
