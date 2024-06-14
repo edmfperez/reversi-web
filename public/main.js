@@ -278,6 +278,36 @@ socket.on('game_update', (payload) => {
     return;
   }
 
+  updateBoard(payload.board);
+  $('#white-score').text(payload.whiteCount);
+  $('#black-score').text(payload.blackCount);
+
+  if (payload.gameOver) {
+    $('#game-over').text('Game Over');
+  }
+});
+
+socket.on('assign_color', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  myColor = payload.color;
+  $('#my-color').text(`Your color: ${myColor}`);
+});
+
+socket.on('game_update', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
   const board = payload.game.board;
 
   if (typeof board === 'undefined' || board === null) {
@@ -340,12 +370,3 @@ socket.on('game_update', (payload) => {
   }
 });
 
-socket.on('assign_color', (payload) => {
-  if (!payload) {
-    console.log('Server did not send a payload');
-    return;
-  }
-
-  myColor = payload.color;
-  $('#my-color').text(`Your color: ${myColor}`);
-});
