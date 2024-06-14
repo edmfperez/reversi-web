@@ -190,10 +190,17 @@ io.on('connection', (socket) => {
       game_id: gameId
     };
   
+    // Assign colors to players
+    games[gameId].player_white.socket = from;
+    games[gameId].player_black.socket = to;
+    io.to(from).emit('assign_color', { color: 'white' });
+    io.to(to).emit('assign_color', { color: 'black' });
+  
     // Notify both players of the game start
     io.to(to).emit('game_start_response', response);
     socket.emit('game_start_response', response);
   });
+  
   
 
   socket.on('play_token', (data) => {
