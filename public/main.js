@@ -12,7 +12,7 @@ if (!username || username === 'null' || username === '') {
 document.getElementById('username-display').innerText = `Welcome, ${username}`;
 
 let myColor;
-let board = Array(8).fill().map(() => Array(8).fill(null));
+let board = Array(8).fill().map(() => Array(8).fill('?'));
 
 $(document).ready(() => {
   $('#lobby-title').text(`${username}'s Lobby`);
@@ -73,9 +73,9 @@ function updateBoard(newBoard) {
     for (let col = 0; col < 8; col++) {
       const cell = $(`#cell_${row}_${col}`);
       cell.find('img').removeClass('black white');
-      if (newBoard[row][col] === 'black') {
+      if (newBoard[row][col] === 'B') {
         cell.find('img').attr('src', 'assets/images/black.gif').addClass('black');
-      } else if (newBoard[row][col] === 'white') {
+      } else if (newBoard[row][col] === 'W') {
         cell.find('img').attr('src', 'assets/images/white.gif').addClass('white');
       } else {
         cell.find('img').attr('src', 'assets/images/empty.gif');
@@ -278,9 +278,9 @@ socket.on('game_update', (payload) => {
     return;
   }
 
-  updateBoard(payload.board);
-  $('#white-score').text(payload.whiteCount);
-  $('#black-score').text(payload.blackCount);
+  updateBoard(payload.game.board);
+  $('#white-score').text(payload.game.whiteCount);
+  $('#black-score').text(payload.game.blackCount);
 
   if (payload.gameOver) {
     $('#game-over').text('Game Over');
@@ -295,4 +295,77 @@ socket.on('assign_color', (payload) => {
 
   myColor = payload.color;
   $('#my-color').text(`Your color: ${myColor}`);
+});
+
+socket.on('game_update', (payload) => {
+  if (!payload) {
+    console.log('Server did not send a payload');
+    return;
+  }
+
+  if (payload.result === 'fail') {
+    console.log(payload.message);
+    return;
+  }
+
+  const board = payload.game.board;
+
+  if (typeof board === 'undefined' || board === null) {
+    console.log('Server did not send a valid board to display');
+    return;
+  }
+
+  const oldBoard = Array(8).fill().map(() => Array(8).fill('?'));
+
+  const t = Date.now();
+  
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (oldBoard[row][col] !== board[row][col]) {
+        let graphic = '';
+        let altTag = '';
+
+        if (oldBoard[row][col] === '?' && board[row][col] === ' ') {
+          graphic = 'empty.gif';
+          altTag = 'empty space';
+        } else if (oldBoard[row][col] === '?' && board[row][col] === 'W') {
+          graphic = 'empty_to_white.gif';
+          altTag = 'white token';
+        } else if (oldBoard[row][col] === '?' && board[row][col] === 'B') {
+          graphic = 'empty_to_black.gif';
+          altTag = 'black token';
+        } else if (oldBoard[row][col] === ' ' && board[row][col] === 'W') {
+          graphic = 'empty_to_white.gif';
+          altTag = 'white token';
+        } else if (oldBoard[row][col] === ' ' && board[row][col] === 'B') {
+          graphic = 'empty_to_black.gif';
+          altTag = 'black token';
+        } else if (oldBoard[row][col] === 'W' && board[row][col] === ' ') {
+          graphic = 'white_to_empty.gif';
+          altTag = 'empty space';
+        } else if (oldBoard[row][col] === 'B' && board[row][col] === ' ') {
+          graphic = 'black_to_empty.gif';
+          altTag = 'empty space';
+        } else if (oldBoard[row][col] === 'W' && board[row][col] === 'B') {
+          graphic = 'white_to_black.gif';
+          altTag = 'black token';
+        } else if (oldBoard[row][col] === 'B' && board[row][col] === 'W') {
+          graphic = 'black_to_white.gif';
+          altTag = 'white token';
+        } else {
+          graphic = 'error.gif';
+          altTag = 'error';
+        }
+
+        const cell = $(`#cell_${row}_${col}`);
+        cell.html(`<img src="assets/images/${graphic}?time=${t}" class="image-fluid" alt="${altTag}">`);
+      }
+    }
+  }
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      oldBoard[row][col] = board[row][col];
+    }
+  }
 });
