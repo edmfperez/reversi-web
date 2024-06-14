@@ -193,7 +193,6 @@ io.on('connection', (socket) => {
     // Assign colors to players
     games[gameId].player_white.socket = from;
     games[gameId].player_black.socket = to;
-    console.log(`Assigning colors: ${from} -> white, ${to} -> black`); // Debug statement
     io.to(from).emit('assign_color', { color: 'white' });
     io.to(to).emit('assign_color', { color: 'black' });
 
@@ -201,6 +200,7 @@ io.on('connection', (socket) => {
     io.to(to).emit('game_start_response', response);
     socket.emit('game_start_response', response);
 });
+
 
   
 
