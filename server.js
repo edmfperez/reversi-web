@@ -112,7 +112,8 @@ function sendGameUpdate(socket, gameId, message) {
     message: message,
     validMoves: validMoves,
     gameOver: gameOver,
-    winner: winner
+    winner: winner,
+    last_move_time: game.last_move_time // Add this line
   };
 
   io.in(gameId).emit('game_update', payload);
@@ -378,6 +379,9 @@ io.on('connection', (socket) => {
 
     // Calculate legal moves for the next player
     game.legal_moves = calculateLegalMoves(game.whose_turn, game.board);
+
+    // Update last move time
+    game.last_move_time = new Date().getTime(); // Add this line
 
     const { whiteCount, blackCount } = getScore(game.board);
 
