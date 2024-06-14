@@ -8,6 +8,11 @@ body {
     padding: 0;
   }
   
+  #my-color {
+    color: black;
+    font-weight: bold;
+}
+
   #game-board td {
     width: 50px;
     height: 50px;

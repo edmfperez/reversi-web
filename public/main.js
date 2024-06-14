@@ -290,21 +290,23 @@ socket.on('game_update', (payload) => {
   }
 });
 
-// Handle color assignment
 socket.on('assign_color', (payload) => {
   if (!payload) {
-    console.log('Server did not send a payload');
-    return;
+      console.log('Server did not send a payload');
+      return;
   }
 
   myColor = payload.color;
   console.log(`Assigned color: ${myColor}`); // Debug statement
-  document.getElementById('my-color').innerText = `Your color: ${myColor}`;
 
-  // Fallback to ensure the color text is updated
-  setTimeout(() => {
-    document.getElementById('my-color').innerText = `Your color: ${myColor}`;
-}, 500);
+  const colorElement = document.getElementById('my-color');
+  if (colorElement) {
+      console.log('Updating color element'); // Debug statement
+      colorElement.innerText = `Your color: ${myColor}`;
+      console.log(`Updated color element to: ${colorElement.innerText}`); // Debug statement
+  } else {
+      console.log('Color element not found'); // Debug statement
+  }
 });
 
 
