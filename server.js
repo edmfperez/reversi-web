@@ -173,34 +173,35 @@ io.on('connection', (socket) => {
 
   socket.on('game_start', (payload) => {
     if (!payload || !payload.room || !payload.from || !payload.to) {
-      console.log('Game start command failed', payload);
-      return;
+        console.log('Game start command failed', payload);
+        return;
     }
-  
+
     const room = payload.room;
     const from = payload.from;
     const to = payload.to;
-  
+
     // Create a new game ID if needed
     const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
     games[gameId] = createNewGame();
-  
+
     const response = {
-      result: 'success',
-      game_id: gameId
+        result: 'success',
+        game_id: gameId
     };
-  
+
     // Assign colors to players
     games[gameId].player_white.socket = from;
     games[gameId].player_black.socket = to;
+    console.log(`Assigning colors: ${from} -> white, ${to} -> black`); // Debug statement
     io.to(from).emit('assign_color', { color: 'white' });
     io.to(to).emit('assign_color', { color: 'black' });
-  
+
     // Notify both players of the game start
     io.to(to).emit('game_start_response', response);
     socket.emit('game_start_response', response);
-  });  
-  
+});
+
   
 
   socket.on('play_token', (data) => {
