@@ -74,9 +74,9 @@ function updateBoard(newBoard) {
       const cell = $(`#cell_${row}_${col}`);
       cell.find('img').removeClass('black white');
       if (newBoard[row][col] === 'B') {
-        cell.find('img').attr('src', 'assets/images/black.gif').addClass('black');
+        cell.find('img').attr('src', 'assets/images/empty_to_black.gif').addClass('black');
       } else if (newBoard[row][col] === 'W') {
-        cell.find('img').attr('src', 'assets/images/white.gif').addClass('white');
+        cell.find('img').attr('src', 'assets/images/empty_to_white.gif').addClass('white');
       } else {
         cell.find('img').attr('src', 'assets/images/empty.gif');
       }
