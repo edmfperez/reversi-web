@@ -44,7 +44,6 @@ function createNewGame() {
   return newGame;
 }
 
-
 function calculateLegalMoves(player, board) {
   const legalMoves = Array(8).fill().map(() => Array(8).fill(' '));
 
@@ -68,7 +67,6 @@ function calculateLegalMoves(player, board) {
   return legalMoves;
 }
 
-
 function sendGameUpdate(socket, gameId, message) {
   if (!games[gameId]) {
     console.log(`No game exists with game_id: ${gameId}. Creating a new game.`);
@@ -76,7 +74,7 @@ function sendGameUpdate(socket, gameId, message) {
   }
 
   const game = games[gameId];
-  const validMoves = calculateValidMoves(game.board, game.whose_turn); // Add this line
+  const validMoves = calculateLegalMoves(game.whose_turn, game.board); // Add this line
 
   const payload = {
     result: 'success',
@@ -88,7 +86,6 @@ function sendGameUpdate(socket, gameId, message) {
 
   io.in(gameId).emit('game_update', payload);
 }
-
 
 function isPlayerTurn(game, socketId, color) {
   if (color === 'white' && game.player_white.socket === socketId && game.whose_turn === 'white') {
@@ -137,6 +134,47 @@ function checkLineMatch(player, dRow, dCol, row, col, board) {
   return false;
 }
 
+function getScore(board) {
+  let whiteCount = 0;
+  let blackCount = 0;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (board[row][col] === 'W') whiteCount++;
+      if (board[row][col] === 'B') blackCount++;
+    }
+  }
+  return { whiteCount, blackCount };
+}
+
+const flipTokens = (who, row, column, board) => {
+  flipLine(who, -1, -1, row, column, board); // Northwest
+  flipLine(who, -1, 0, row, column, board);  // North
+  flipLine(who, -1, 1, row, column, board);  // Northeast
+  flipLine(who, 0, -1, row, column, board);  // West
+  flipLine(who, 0, 1, row, column, board);   // East
+  flipLine(who, 1, -1, row, column, board);  // Southwest
+  flipLine(who, 1, 0, row, column, board);   // South
+  flipLine(who, 1, 1, row, column, board);   // Southeast
+};
+
+const flipLine = (who, dr, dc, row, column, board) => {
+  const other = who === 'B' ? 'W' : 'B';
+  let r = row + dr;
+  let c = column + dc;
+  let tokensToFlip = [];
+
+  while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] === other) {
+    tokensToFlip.push([r, c]);
+    r += dr;
+    c += dc;
+  }
+
+  if (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] === who) {
+    tokensToFlip.forEach(([r, c]) => {
+      board[r][c] = who;
+    });
+  }
+};
 
 io.on('connection', (socket) => {
   console.log('A user connected', socket.id);
@@ -278,57 +316,53 @@ io.on('connection', (socket) => {
     // Notify both players of the game start
     io.to(to).emit('game_start_response', response);
     socket.emit('game_start_response', response);
-});
+  });
 
+  socket.on('play_token', (data) => {
+    const gameId = data.room;
+    const game = games[gameId];
+    if (!game) return;
 
-  
+    if (!isPlayerTurn(game, socket.id, data.color)) {
+      const response = {
+        result: 'fail',
+        message: 'Play token played the wrong color. It\'s not their turn.'
+      };
+      socket.emit('play_token_response', response);
+      return;
+    }
 
-socket.on('play_token', (data) => {
-  const gameId = data.room;
-  const game = games[gameId];
-  if (!game) return;
+    const { row, col, color } = data;
+    game.board[row][col] = color;
 
-  if (!isPlayerTurn(game, socket.id, data.color)) {
+    // Flip tokens after a move is made
+    flipTokens(color, row, col, game.board);
+
+    // Toggle turn
+    game.whose_turn = (color === 'white') ? 'black' : 'white';
+
+    // Calculate legal moves for the next player
+    game.legal_moves = calculateLegalMoves(game.whose_turn, game.board);
+
+    const { whiteCount, blackCount } = getScore(game.board);
+
     const response = {
-      result: 'fail',
-      message: 'Play token played the wrong color. It\'s not their turn.'
+      game: {
+        board: game.board,
+        whiteCount,
+        blackCount,
+        whose_turn: game.whose_turn,
+        legal_moves: game.legal_moves
+      },
+      gameOver: whiteCount + blackCount === 64
     };
-    socket.emit('play_token_response', response);
-    return;
-  }
 
-  const { row, col, color } = data;
-  game.board[row][col] = color;
+    io.in(gameId).emit('game_update', response);
 
-  // Toggle turn
-  game.whose_turn = (color === 'white') ? 'black' : 'white';
-
-  // Calculate legal moves for the next player
-  game.legal_moves = calculateLegalMoves(game.whose_turn, game.board);
-
-  const { whiteCount, blackCount } = getScore(game.board);
-
-  const response = {
-    game: {
-      board: game.board,
-      whiteCount,
-      blackCount,
-      whose_turn: game.whose_turn,
-      legal_moves: game.legal_moves
-    },
-    gameOver: whiteCount + blackCount === 64
-  };
-
-  io.in(gameId).emit('game_update', response);
-
-  if (response.gameOver) {
-    io.in(gameId).emit('game_over', { message: 'Game Over' });
-  }
-});
-
-
-
-
+    if (response.gameOver) {
+      io.in(gameId).emit('game_over', { message: 'Game Over' });
+    }
+  });
 
   socket.on('disconnect', () => {
     const player = players[socket.id];
@@ -347,18 +381,6 @@ socket.on('play_token', (data) => {
     console.log('User disconnected', socket.id);
   });
 });
-
-function getScore(board) {
-  let whiteCount = 0;
-  let blackCount = 0;
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      if (board[row][col] === 'W') whiteCount++;
-      if (board[row][col] === 'B') blackCount++;
-    }
-  }
-  return { whiteCount, blackCount };
-}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
