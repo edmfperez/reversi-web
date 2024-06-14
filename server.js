@@ -123,17 +123,18 @@ io.on('connection', (socket) => {
     io.to(requestedUser).emit('uninvited', { result: 'success', socket_id: socket.id });
   });
 
-  socket.on('accept_invite', (payload) => {
+  socket.on('game_start', (payload) => {
     if (!payload || !payload.to) {
-      console.log('Accept invite command failed', payload);
+      console.log('Game start command failed', payload);
       return;
     }
 
     const requestedUser = payload.to;
     const room = players[socket.id].room;
+    const username = players[socket.id].username;
 
-    if (!requestedUser || players[requestedUser].room !== room) {
-      console.log('Accept invite command failed', payload);
+    if (!requestedUser || !players[requestedUser] || players[requestedUser].room !== room) {
+      console.log('Game start command failed', payload);
       return;
     }
 
