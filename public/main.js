@@ -68,6 +68,11 @@ function playToken(row, col) {
   socket.emit('play_token', request);
 }
 
+function updateTurnDisplay(turn) {
+  const turnDisplay = (turn === 'white') ? 'White' : 'Black';
+  $('#turn-display').text(`Current turn: ${turnDisplay}`);
+}
+
 function updateBoard(newBoard) {
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -284,11 +289,13 @@ socket.on('game_update', (payload) => {
   $('#white-score').text(payload.game.whiteCount);
   $('#black-score').text(payload.game.blackCount);
 
+  updateTurnDisplay(payload.game.whose_turn); // Add this line
+
   if (payload.gameOver) {
     $('#game-over').text('Game Over');
-    alert('Game Over!');
   }
 });
+
 
 socket.on('assign_color', (payload) => {
   if (!payload) {
