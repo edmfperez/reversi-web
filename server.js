@@ -28,7 +28,7 @@ function createNewGame() {
       username: ''
     },
     last_move_time: new Date().getTime(),
-    whose_turn: 'white',
+    whose_turn: 'black', // Black starts first
     board: [
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -38,16 +38,36 @@ function createNewGame() {
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
-    ]
+    ],
+    legal_moves: calculateLegalMoves('black', this.board) // Calculate initial legal moves
   };
   return newGame;
 }
 
-function calculateValidMoves(board, color) {
-  // Implement the logic to calculate valid moves for the given color
-  // Return an array of valid moves, e.g., [{row: 3, col: 4}, {row: 2, col: 5}, ...]
-  return [];
+
+function calculateLegalMoves(player, board) {
+  const legalMoves = Array(8).fill().map(() => Array(8).fill(' '));
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (board[row][col] === ' ') {
+        if (adjacentSupport(player, -1, -1, row, col, board) || // NW
+            adjacentSupport(player, -1, 0, row, col, board) ||  // N
+            adjacentSupport(player, -1, 1, row, col, board) ||  // NE
+            adjacentSupport(player, 0, -1, row, col, board) ||  // W
+            adjacentSupport(player, 0, 1, row, col, board) ||   // E
+            adjacentSupport(player, 1, -1, row, col, board) ||  // SW
+            adjacentSupport(player, 1, 0, row, col, board) ||   // S
+            adjacentSupport(player, 1, 1, row, col, board)) {   // SE
+          legalMoves[row][col] = player;
+        }
+      }
+    }
+  }
+
+  return legalMoves;
 }
+
 
 function sendGameUpdate(socket, gameId, message) {
   if (!games[gameId]) {
@@ -77,6 +97,43 @@ function isPlayerTurn(game, socketId, color) {
   if (color === 'black' && game.player_black.socket === socketId && game.whose_turn === 'black') {
     return true;
   }
+  return false;
+}
+
+function adjacentSupport(player, dRow, dCol, row, col, board) {
+  const opponent = (player === 'white') ? 'black' : 'white';
+
+  const newRow = row + dRow;
+  const newCol = col + dCol;
+
+  if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) {
+    return false;
+  }
+
+  if (board[newRow][newCol] !== opponent) {
+    return false;
+  }
+
+  return checkLineMatch(player, dRow, dCol, newRow, newCol, board);
+}
+
+function checkLineMatch(player, dRow, dCol, row, col, board) {
+  let newRow = row + dRow;
+  let newCol = col + dCol;
+
+  while (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+    if (board[newRow][newCol] === ' ') {
+      return false;
+    }
+
+    if (board[newRow][newCol] === player) {
+      return true;
+    }
+
+    newRow += dRow;
+    newCol += dCol;
+  }
+
   return false;
 }
 
@@ -246,7 +303,8 @@ socket.on('play_token', (data) => {
   // Toggle turn
   game.whose_turn = (color === 'white') ? 'black' : 'white';
 
-  const validMoves = calculateValidMoves(game.board, game.whose_turn);
+  // Calculate legal moves for the next player
+  game.legal_moves = calculateLegalMoves(game.whose_turn, game.board);
 
   const { whiteCount, blackCount } = getScore(game.board);
 
@@ -256,7 +314,7 @@ socket.on('play_token', (data) => {
       whiteCount,
       blackCount,
       whose_turn: game.whose_turn,
-      validMoves: validMoves
+      legal_moves: game.legal_moves
     },
     gameOver: whiteCount + blackCount === 64
   };
@@ -267,6 +325,7 @@ socket.on('play_token', (data) => {
     io.in(gameId).emit('game_over', { message: 'Game Over' });
   }
 });
+
 
 
 

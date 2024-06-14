@@ -275,14 +275,18 @@ socket.on('game_start_response', (payload) => {
 });
 
 function displayValidMoves(validMoves) {
-  // Remove previous valid move indicators
-  $('.valid-move').removeClass('valid-move');
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const cell = $(`#cell_${row}_${col}`);
+      cell.removeClass('legal-move');
 
-  validMoves.forEach(move => {
-    const cell = $(`#cell_${move.row}_${move.col}`);
-    cell.addClass('valid-move');
-  });
+      if (validMoves[row][col] !== ' ') {
+        cell.addClass('legal-move');
+      }
+    }
+  }
 }
+
 
 socket.on('game_update', (payload) => {
   if (!payload) {
