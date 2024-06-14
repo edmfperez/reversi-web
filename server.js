@@ -232,7 +232,11 @@ socket.on('play_token', (data) => {
   if (!game) return;
 
   if (!isPlayerTurn(game, socket.id, data.color)) {
-    console.log('Not your turn');
+    const response = {
+      result: 'fail',
+      message: 'Play token played the wrong color. It\'s not their turn.'
+    };
+    socket.emit('play_token_response', response);
     return;
   }
 
@@ -242,7 +246,7 @@ socket.on('play_token', (data) => {
   // Toggle turn
   game.whose_turn = (color === 'white') ? 'black' : 'white';
 
-  const validMoves = calculateValidMoves(game.board, game.whose_turn); // Add this line
+  const validMoves = calculateValidMoves(game.board, game.whose_turn);
 
   const { whiteCount, blackCount } = getScore(game.board);
 
@@ -251,8 +255,8 @@ socket.on('play_token', (data) => {
       board: game.board,
       whiteCount,
       blackCount,
-      whose_turn: game.whose_turn, // Add this line
-      validMoves: validMoves // Add this line
+      whose_turn: game.whose_turn,
+      validMoves: validMoves
     },
     gameOver: whiteCount + blackCount === 64
   };
@@ -263,6 +267,7 @@ socket.on('play_token', (data) => {
     io.in(gameId).emit('game_over', { message: 'Game Over' });
   }
 });
+
 
 
 
