@@ -199,7 +199,7 @@ io.on('connection', (socket) => {
     // Notify both players of the game start
     io.to(to).emit('game_start_response', response);
     socket.emit('game_start_response', response);
-  });
+  });  
   
   
 

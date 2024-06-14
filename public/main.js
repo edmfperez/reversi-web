@@ -289,6 +289,7 @@ socket.on('game_update', (payload) => {
   }
 });
 
+// Handle color assignment
 socket.on('assign_color', (payload) => {
   if (!payload) {
     console.log('Server did not send a payload');
@@ -296,8 +297,9 @@ socket.on('assign_color', (payload) => {
   }
 
   myColor = payload.color;
-  $('#my-color').text(`Your color: ${myColor}`);
+  document.getElementById('my-color').innerText = `Your color: ${myColor}`;
 });
+
 
 socket.on('game_update', (payload) => {
   if (!payload) {
