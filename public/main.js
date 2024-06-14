@@ -274,6 +274,16 @@ socket.on('game_start_response', (payload) => {
   window.location.href = `game.html?username=${username}&game_id=${payload.game_id}`;
 });
 
+function displayValidMoves(validMoves) {
+  // Remove previous valid move indicators
+  $('.valid-move').removeClass('valid-move');
+
+  validMoves.forEach(move => {
+    const cell = $(`#cell_${move.row}_${move.col}`);
+    cell.addClass('valid-move');
+  });
+}
+
 socket.on('game_update', (payload) => {
   if (!payload) {
     console.log('Server did not send a payload');
@@ -289,12 +299,14 @@ socket.on('game_update', (payload) => {
   $('#white-score').text(payload.game.whiteCount);
   $('#black-score').text(payload.game.blackCount);
 
-  updateTurnDisplay(payload.game.whose_turn); // Add this line
+  updateTurnDisplay(payload.game.whose_turn);
+  displayValidMoves(payload.game.validMoves); // Add this line
 
   if (payload.gameOver) {
     $('#game-over').text('Game Over');
   }
 });
+
 
 
 socket.on('assign_color', (payload) => {

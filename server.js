@@ -43,21 +43,32 @@ function createNewGame() {
   return newGame;
 }
 
+function calculateValidMoves(board, color) {
+  // Implement the logic to calculate valid moves for the given color
+  // Return an array of valid moves, e.g., [{row: 3, col: 4}, {row: 2, col: 5}, ...]
+  return [];
+}
+
 function sendGameUpdate(socket, gameId, message) {
   if (!games[gameId]) {
     console.log(`No game exists with game_id: ${gameId}. Creating a new game.`);
     games[gameId] = createNewGame();
   }
 
+  const game = games[gameId];
+  const validMoves = calculateValidMoves(game.board, game.whose_turn); // Add this line
+
   const payload = {
     result: 'success',
     game_id: gameId,
     game: games[gameId],
-    message: message
+    message: message,
+    validMoves: validMoves // Add this line
   };
 
   io.in(gameId).emit('game_update', payload);
 }
+
 
 function isPlayerTurn(game, socketId, color) {
   if (color === 'white' && game.player_white.socket === socketId && game.whose_turn === 'white') {
@@ -231,6 +242,8 @@ socket.on('play_token', (data) => {
   // Toggle turn
   game.whose_turn = (color === 'white') ? 'black' : 'white';
 
+  const validMoves = calculateValidMoves(game.board, game.whose_turn); // Add this line
+
   const { whiteCount, blackCount } = getScore(game.board);
 
   const response = {
@@ -238,7 +251,8 @@ socket.on('play_token', (data) => {
       board: game.board,
       whiteCount,
       blackCount,
-      whose_turn: game.whose_turn // Add this line
+      whose_turn: game.whose_turn, // Add this line
+      validMoves: validMoves // Add this line
     },
     gameOver: whiteCount + blackCount === 64
   };
@@ -249,6 +263,7 @@ socket.on('play_token', (data) => {
     io.in(gameId).emit('game_over', { message: 'Game Over' });
   }
 });
+
 
 
   socket.on('disconnect', () => {
