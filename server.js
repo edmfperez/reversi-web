@@ -171,6 +171,31 @@ io.on('connection', (socket) => {
     io.to(requestedUser).emit('game_start_response', response);
   });
 
+  socket.on('game_start', (payload) => {
+    if (!payload || !payload.room || !payload.from || !payload.to) {
+      console.log('Game start command failed', payload);
+      return;
+    }
+  
+    const room = payload.room;
+    const from = payload.from;
+    const to = payload.to;
+  
+    // Create a new game ID if needed
+    const gameId = Math.floor(1 + Math.random() * 0x100000).toString(16).substr(1);
+    games[gameId] = createNewGame();
+  
+    const response = {
+      result: 'success',
+      game_id: gameId
+    };
+  
+    // Notify both players of the game start
+    io.to(to).emit('game_start_response', response);
+    socket.emit('game_start_response', response);
+  });
+  
+
   socket.on('play_token', (data) => {
     const gameId = data.room;
     const game = games[gameId];

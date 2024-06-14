@@ -253,6 +253,7 @@ socket.on('uninvited', (payload) => {
   makeInviteButton(payload.socket_id);
 });
 
+// Handle game start response
 socket.on('game_start_response', (payload) => {
   if (!payload) {
     console.log('Server did not send a payload');
@@ -264,6 +265,7 @@ socket.on('game_start_response', (payload) => {
     return;
   }
 
+  // Navigate to the game page with the correct game_id
   window.location.href = `game.html?username=${username}&game_id=${payload.game_id}`;
 });
 
