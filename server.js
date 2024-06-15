@@ -17,6 +17,17 @@ const players = {};
 const games = {};
 
 function createNewGame() {
+  const initialBoard = [
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', 'W', 'B', ' ', ' ', ' '],
+    [' ', ' ', ' ', 'B', 'W', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+  ];
+
   const newGame = {
     player_white: {
       socket: '',
@@ -28,17 +39,8 @@ function createNewGame() {
     },
     last_move_time: new Date().getTime(),
     whose_turn: 'black', // Black starts first
-    board: [
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', 'W', 'B', ' ', ' ', ' '],
-      [' ', ' ', ' ', 'B', 'W', ' ', ' ', ' '],
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-      [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
-    ],
-    legal_moves: calculateLegalMoves('black', this.board) // Calculate initial legal moves
+    board: initialBoard,
+    legal_moves: calculateLegalMoves('black', initialBoard) // Calculate initial legal moves
   };
   return newGame;
 }
@@ -164,7 +166,7 @@ function checkLineMatch(player, dRow, dCol, row, col, board) {
     }
 
     newRow += dRow;
-    newCol += dCol;
+    newCol += dc;
   }
 
   return false;
