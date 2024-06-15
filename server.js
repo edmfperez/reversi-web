@@ -360,7 +360,7 @@ io.on('connection', (socket) => {
     const gameId = data.room;
     const game = games[gameId];
     if (!game) return;
-
+  
     if (!isPlayerTurn(game, socket.id, data.color)) {
       const response = {
         result: 'fail',
@@ -369,29 +369,39 @@ io.on('connection', (socket) => {
       socket.emit('play_token_response', response);
       return;
     }
-
+  
     const { row, col, color } = data;
+  
+    if (game.board[row][col] !== ' ') {
+      const response = {
+        result: 'fail',
+        message: 'This cell is already occupied.'
+      };
+      socket.emit('play_token_response', response);
+      return;
+    }
+  
     game.board[row][col] = color;
-
+  
     // Flip tokens after a move is made
     flipTokens(color, row, col, game.board);
-
+  
     // Toggle turn
     game.whose_turn = (color === 'white') ? 'black' : 'white';
-
+  
     // Calculate legal moves for the next player
     game.legal_moves = calculateLegalMoves(game.whose_turn, game.board);
-
+  
     // Update last move time
-    game.last_move_time = new Date().getTime(); // Add this line
-
+    game.last_move_time = new Date().getTime();
+  
     const { whiteCount, blackCount } = getScore(game.board);
-
+  
     // Check if game is over
     let gameOver = false;
     let winner = 'tie';
     let legalMovesCount = 0;
-
+  
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         if (game.legal_moves[row][col] !== ' ') {
@@ -399,7 +409,7 @@ io.on('connection', (socket) => {
         }
       }
     }
-
+  
     if (legalMovesCount === 0) {
       gameOver = true;
       if (whiteCount > blackCount) {
@@ -408,7 +418,7 @@ io.on('connection', (socket) => {
         winner = 'black';
       }
     }
-
+  
     const response = {
       game: {
         board: game.board,
@@ -420,13 +430,14 @@ io.on('connection', (socket) => {
       gameOver: gameOver,
       winner: winner
     };
-
+  
     io.in(gameId).emit('game_update', response);
-
+  
     if (gameOver) {
       io.in(gameId).emit('game_over', { message: `Game Over. ${winner === 'tie' ? 'It\'s a tie!' : `${winner} wins!`}` });
     }
   });
+  
 
   socket.on('disconnect', () => {
     const player = players[socket.id];
