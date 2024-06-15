@@ -357,9 +357,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('play_token', (data) => {
+    console.log('Received play_token event:', data);
     const gameId = data.room;
     const game = games[gameId];
-    if (!game) return;
+    if (!game) {
+      console.log('Game not found:', gameId);
+      return;
+    }
   
     if (!isPlayerTurn(game, socket.id, data.color)) {
       const response = {
@@ -431,12 +435,14 @@ io.on('connection', (socket) => {
       winner: winner
     };
   
+    console.log('Sending game_update:', response);
     io.in(gameId).emit('game_update', response);
   
     if (gameOver) {
       io.in(gameId).emit('game_over', { message: `Game Over. ${winner === 'tie' ? 'It\'s a tie!' : `${winner} wins!`}` });
     }
   });
+  
   
 
   socket.on('disconnect', () => {

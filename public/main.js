@@ -49,7 +49,10 @@ function createBoard() {
     for (let col = 0; col < 8; col++) {
       const td = $(`<td id="cell_${row}_${col}"></td>`);
       td.append(`<img src="assets/images/empty.gif" class="image-fluid" alt="empty">`);
-      td.click(() => playToken(row, col));
+      td.click(() => {
+        console.log(`Cell clicked: row=${row}, col=${col}`);
+        playToken(row, col);
+      });
       tr.append(td);
     }
     boardElement.append(tr);
@@ -57,6 +60,7 @@ function createBoard() {
 }
 
 function playToken(row, col) {
+  console.log(`Attempting to play token at row=${row}, col=${col}`);
   const request = {
     room: chatRoom,
     username: username,
@@ -327,7 +331,10 @@ socket.on('game_update', (payload) => {
       cell.off('click'); // Remove any existing event listeners
       if (payload.game.whose_turn === myColor && legalMoves[row][col] === myColor.charAt(0)) {
         cell.addClass('legal-move');
-        cell.click(() => playToken(row, col));
+        cell.click(() => {
+          console.log(`Legal move clicked: row=${row}, col=${col}`);
+          playToken(row, col);
+        });
       }
     }
   }
