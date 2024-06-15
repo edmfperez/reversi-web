@@ -385,6 +385,7 @@ io.on('connection', (socket) => {
       return;
     }
   
+    console.log(`Placing token at row=${row}, col=${col}, color=${color}`);
     game.board[row][col] = color;
   
     // Flip tokens after a move is made
@@ -442,6 +443,9 @@ io.on('connection', (socket) => {
       io.in(gameId).emit('game_over', { message: `Game Over. ${winner === 'tie' ? 'It\'s a tie!' : `${winner} wins!`}` });
     }
   });
+  
+  
+  
   
   
 

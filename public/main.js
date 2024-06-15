@@ -293,6 +293,7 @@ function displayValidMoves(validMoves) {
 
 
 socket.on('game_update', (payload) => {
+  console.log('Received game_update payload:', payload);
   if (!payload) {
     console.log('Server did not send a payload');
     return;
